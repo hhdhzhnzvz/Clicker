@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cosmic Defender</title>
     <style>
         :root {
@@ -9,32 +10,38 @@
             --secondary: #ff006a;
             --background: #0a0a2e;
             --accent: #45ffb9;
+            --text: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             margin: 0;
+            padding: 0;
             background: var(--background);
-            color: var(--primary);
+            color: var(--text);
             font-family: 'Orbitron', sans-serif;
             min-height: 100vh;
             overflow: hidden;
+            touch-action: manipulation;
         }
 
         .game-container {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 30px;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
             height: 100vh;
-            box-sizing: border-box;
+            width: 100vw;
+            position: relative;
         }
 
         .game-field {
             position: relative;
-            border: 3px solid var(--primary);
-            border-radius: 15px;
+            flex: 1;
+            border-bottom: 2px solid var(--primary);
             overflow: hidden;
-            box-shadow: 0 0 40px rgba(0, 247, 255, 0.1);
         }
 
         #planet {
@@ -42,62 +49,157 @@
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            width: 250px;
-            height: 250px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, 
                 #00ff88 0%, #009944 20%, 
                 #005522 40%, #002211 60%);
-            box-shadow: 0 0 80px rgba(0, 255, 136, 0.3),
-                        inset 0 0 50px rgba(0, 255, 187, 0.4);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.3),
+                        inset 0 0 30px rgba(0, 255, 187, 0.4);
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: transform 0.1s, box-shadow 0.3s;
             z-index: 2;
+            overflow: hidden;
+        }
+
+        .planet-ring {
+            position: absolute;
+            width: 200%;
+            height: 10px;
+            background: rgba(0, 247, 255, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: -50%;
+            transform: translateY(-50%) rotate(20deg);
+            z-index: 3;
+        }
+
+        .planet-city {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 5px white;
+            z-index: 3;
+        }
+
+        .click-effect {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 247, 255, 0.8) 0%, rgba(0, 247, 255, 0) 70%);
+            pointer-events: none;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+            animation: clickExpand 0.5s forwards;
         }
 
         .enemy {
             position: absolute;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background: var(--secondary);
-            box-shadow: 0 0 15px var(--secondary);
-            animation: pulse 1s infinite;
+            width: 30px;
+            height: 30px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23ff006a" d="M50 0L62 38H98L68 62L80 100L50 75L20 100L32 62L2 38H38Z"/></svg>');
+            background-size: contain;
+            filter: drop-shadow(0 0 10px var(--secondary));
             cursor: pointer;
             z-index: 1;
+            transform-origin: center;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        .enemy::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+            opacity: 0.3;
+            z-index: -1;
+            animation: pulse 1.5s infinite;
+        }
+
+        .trail {
+            position: absolute;
+            width: 60px;
+            height: 10px;
+            background: linear-gradient(90deg, var(--secondary) 0%, transparent 100%);
+            border-radius: 5px;
+            transform-origin: left center;
+            z-index: 0;
+            opacity: 0.7;
+        }
+
+        .game-ui {
+            display: flex;
+            flex-direction: column;
+            height: 40vh;
+            background: linear-gradient(to top, #0a0a3e 0%, #0a0a2e 100%);
+            border-top: 2px solid var(--primary);
+            box-shadow: 0 -5px 20px rgba(0, 247, 255, 0.1);
         }
 
         .stats-panel {
-            background: linear-gradient(145deg, #0a0a3e, #0a0a2e);
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 0 20px rgba(0, 247, 255, 0.1);
-            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(0, 20, 40, 0.5);
+            border-bottom: 1px solid rgba(0, 247, 255, 0.2);
         }
 
-        .upgrades-panel {
-            background: linear-gradient(145deg, #0a0a3e, #0a0a2e);
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            padding: 20px;
-            height: calc(100% - 160px);
-            overflow-y: auto;
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px;
+            min-width: 80px;
+            padding: 8px;
+            background: rgba(0, 10, 20, 0.7);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 247, 255, 0.1);
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.2em;
+            margin-top: 3px;
+        }
+
+        .upgrades-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px;
+            scroll-snap-type: x mandatory;
+            flex: 1;
         }
 
         .upgrade-card {
-            background: rgba(0, 20, 40, 0.8);
+            scroll-snap-align: start;
+            min-width: 80%;
+            background: linear-gradient(145deg, #0a0a3e, #0a0a2e);
             border: 1px solid var(--primary);
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 15px;
-            margin-bottom: 15px;
+            margin-right: 15px;
             cursor: pointer;
             transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .upgrade-card:last-child {
+            margin-right: 0;
         }
 
         .upgrade-card:hover {
             border-color: var(--accent);
-            transform: translateY(-3px);
+            transform: translateY(-5px);
         }
 
         .upgrade-header {
@@ -110,6 +212,13 @@
         .upgrade-title {
             font-size: 1.1em;
             color: var(--accent);
+            display: flex;
+            align-items: center;
+        }
+
+        .upgrade-icon {
+            margin-right: 8px;
+            font-size: 1.2em;
         }
 
         .upgrade-cost {
@@ -117,11 +226,19 @@
             padding: 5px 10px;
             border-radius: 5px;
             font-weight: bold;
+            font-size: 0.9em;
         }
 
         .upgrade-level {
             font-size: 0.9em;
-            color: #ffffff80;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+        }
+
+        .upgrade-desc {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 8px;
         }
 
         .star {
@@ -133,18 +250,73 @@
             animation: twinkle 2s infinite;
         }
 
+        .nebula {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            filter: blur(20px);
+            z-index: 0;
+        }
+
         @keyframes twinkle {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 1; }
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+            0% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 0.6; }
+            100% { transform: scale(1); opacity: 0.3; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        @keyframes clickExpand {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+
+        @keyframes trailFade {
+            0% { opacity: 0.7; transform: scaleX(1); }
+            100% { opacity: 0; transform: scaleX(0.1); }
+        }
+
+        /* Мобильные стили */
+        @media (min-width: 768px) {
+            .game-container {
+                flex-direction: row;
+            }
+            
+            .game-ui {
+                width: 300px;
+                height: 100vh;
+                border-top: none;
+                border-left: 2px solid var(--primary);
+            }
+            
+            .upgrades-container {
+                flex-direction: column;
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+            
+            .upgrade-card {
+                min-width: auto;
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+            
+            #planet {
+                width: 200px;
+                height: 200px;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="game-container">
@@ -155,62 +327,82 @@
         <div class="game-ui">
             <div class="stats-panel">
                 <div class="stat-item">
-                    <span>💰 Кредиты:</span>
-                    <span id="credits">0</span>
+                    <span>💰 Кредиты</span>
+                    <span class="stat-value" id="credits">0</span>
                 </div>
                 <div class="stat-item">
-                    <span>⚡ Сила:</span>
-                    <span id="power">1</span>
+                    <span>⚡ Сила</span>
+                    <span class="stat-value" id="power">1</span>
                 </div>
                 <div class="stat-item">
-                    <span>❤️ Здоровье:</span>
-                    <span id="health">100</span>%
+                    <span>❤️ Здоровье</span>
+                    <span class="stat-value" id="health">100</span>
                 </div>
                 <div class="stat-item">
-                    <span>🌌 Волна:</span>
-                    <span id="wave">1</span>
+                    <span>🌌 Волна</span>
+                    <span class="stat-value" id="wave">1</span>
                 </div>
             </div>
 
-            <div class="upgrades-panel">
+            <div class="upgrades-container">
                 <div class="upgrade-card" data-upgrade="damage">
                     <div class="upgrade-header">
-                        <div class="upgrade-title">💥 Урон</div>
+                        <div class="upgrade-title">
+                            <span class="upgrade-icon">💥</span>
+                            Урон
+                        </div>
                         <div class="upgrade-cost" id="damageCost">50</div>
                     </div>
                     <div class="upgrade-level">Уровень: <span>1</span></div>
+                    <div class="upgrade-desc">Увеличивает силу клика по планете</div>
                 </div>
 
                 <div class="upgrade-card" data-upgrade="turret">
                     <div class="upgrade-header">
-                        <div class="upgrade-title">🛸 Турели</div>
+                        <div class="upgrade-title">
+                            <span class="upgrade-icon"><i class="fas fa-space-shuttle"></i></span>
+                            Турели
+                        </div>
                         <div class="upgrade-cost" id="turretCost">150</div>
                     </div>
                     <div class="upgrade-level">Уровень: <span>0</span></div>
+                    <div class="upgrade-desc">Автоматически стреляют по астероидам</div>
                 </div>
 
                 <div class="upgrade-card" data-upgrade="shield">
                     <div class="upgrade-header">
-                        <div class="upgrade-title">🛡️ Щиты</div>
+                        <div class="upgrade-title">
+                            <span class="upgrade-icon">🛡️</span>
+                            Щиты
+                        </div>
                         <div class="upgrade-cost" id="shieldCost">30</div>
                     </div>
                     <div class="upgrade-level">Уровень: <span>1</span></div>
+                    <div class="upgrade-desc">Увеличивает максимальное здоровье</div>
                 </div>
 
                 <div class="upgrade-card" data-upgrade="heal">
                     <div class="upgrade-header">
-                        <div class="upgrade-title">⚗️ Лечение</div>
+                        <div class="upgrade-title">
+                            <span class="upgrade-icon">⚗️</span>
+                            Лечение
+                        </div>
                         <div class="upgrade-cost" id="healCost">75</div>
                     </div>
                     <div class="upgrade-level">Уровень: <span>0</span></div>
+                    <div class="upgrade-desc">Автоматическое восстановление здоровья</div>
                 </div>
 
                 <div class="upgrade-card" data-upgrade="income">
                     <div class="upgrade-header">
-                        <div class="upgrade-title">💰 Доход</div>
+                        <div class="upgrade-title">
+                            <span class="upgrade-icon">💰</span>
+                            Доход
+                        </div>
                         <div class="upgrade-cost" id="incomeCost">100</div>
                     </div>
                     <div class="upgrade-level">Уровень: <span>0</span></div>
+                    <div class="upgrade-desc">Пассивный доход кредитов</div>
                 </div>
             </div>
         </div>
@@ -222,56 +414,182 @@
                 this.credits = 0;
                 this.power = 1;
                 this.health = 100;
+                this.maxHealth = 100;
                 this.wave = 1;
-                this.upgrades = {
-                    damage: { level: 1, baseCost: 50, cost: 50, mult: 1.3 },
-                    turret: { level: 0, baseCost: 150, cost: 150, mult: 1.4 },
-                    shield: { level: 1, baseCost: 30, cost: 30, mult: 1.25 },
-                    heal: { level: 0, baseCost: 75, cost: 75, mult: 1.35 },
-                    income: { level: 0, baseCost: 100, cost: 100, mult: 1.5 }
-                };
                 this.autoHeal = 0;
                 this.autoIncome = 0;
+                this.turrets = 0;
+                this.planetElements = [];
+                
+                this.upgrades = {
+                    damage: { level: 1, baseCost: 50, cost: 50, mult: 1.3, icon: '💥' },
+                    turret: { level: 0, baseCost: 150, cost: 150, mult: 1.4, icon: '🛸' },
+                    shield: { level: 1, baseCost: 30, cost: 30, mult: 1.25, icon: '🛡️' },
+                    heal: { level: 0, baseCost: 75, cost: 75, mult: 1.35, icon: '⚗️' },
+                    income: { level: 0, baseCost: 100, cost: 100, mult: 1.5, icon: '💰' }
+                };
+                
+                this.initGame();
                 this.generateStars();
+                this.generateNebulas();
+                this.setupPlanet();
                 this.setupEventListeners();
                 this.startWave();
                 this.gameLoop();
             }
 
+            initGame() {
+                // Добавляем обработчик изменения размера окна
+                window.addEventListener('resize', this.handleResize.bind(this));
+                this.handleResize();
+            }
+
+            handleResize() {
+                // Можно добавить логику адаптации под разные размеры экрана
+            }
+
             generateStars() {
                 const container = document.getElementById('gameField');
-                for(let i = 0; i < 200; i++) {
+                for(let i = 0; i < 100; i++) {
                     const star = document.createElement('div');
                     star.className = 'star';
                     star.style.left = `${Math.random() * 100}%`;
                     star.style.top = `${Math.random() * 100}%`;
+                    star.style.width = `${Math.random() * 3 + 1}px`;
+                    star.style.height = star.style.width;
                     star.style.animationDelay = `${Math.random() * 2}s`;
                     container.appendChild(star);
                 }
             }
 
+            generateNebulas() {
+                const container = document.getElementById('gameField');
+                const colors = ['rgba(70, 0, 120, 0.1)', 'rgba(0, 100, 150, 0.1)', 'rgba(150, 0, 50, 0.1)'];
+                
+                for(let i = 0; i < 5; i++) {
+                    const nebula = document.createElement('div');
+                    nebula.className = 'nebula';
+                    nebula.style.left = `${Math.random() * 100}%`;
+                    nebula.style.top = `${Math.random() * 100}%`;
+                    nebula.style.width = `${Math.random() * 300 + 100}px`;
+                    nebula.style.height = `${Math.random() * 300 + 100}px`;
+                    nebula.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    container.appendChild(nebula);
+                }
+            }
+
+            setupPlanet() {
+                const planet = document.getElementById('planet');
+                
+                // Добавляем кольцо вокруг планеты
+                const ring = document.createElement('div');
+                ring.className = 'planet-ring';
+                planet.appendChild(ring);
+                
+                // Добавляем города на планету
+                for(let i = 0; i < 5; i++) {
+                    const city = document.createElement('div');
+                    city.className = 'planet-city';
+                    city.style.left = `${Math.random() * 70 + 15}%`;
+                    city.style.top = `${Math.random() * 70 + 15}%`;
+                    planet.appendChild(city);
+                    this.planetElements.push(city);
+                }
+            }
+
+            updatePlanetAppearance() {
+                const planet = document.getElementById('planet');
+                const shieldLevel = this.upgrades.shield.level;
+                
+                // Изменяем цвет планеты в зависимости от уровня щитов
+                const hue = 120 + Math.min(shieldLevel * 5, 60); // От зеленого к желтому
+                planet.style.background = `radial-gradient(circle at 30% 30%, 
+                    hsl(${hue}, 100%, 60%) 0%, 
+                    hsl(${hue}, 100%, 30%) 20%, 
+                    hsl(${hue}, 100%, 20%) 40%, 
+                    hsl(${hue}, 100%, 10%) 60%)`;
+                
+                // Добавляем больше городов с улучшениями
+                if (this.upgrades.turret.level > this.planetElements.length - 5) {
+                    const city = document.createElement('div');
+                    city.className = 'planet-city';
+                    city.style.left = `${Math.random() * 70 + 15}%`;
+                    city.style.top = `${Math.random() * 70 + 15}%`;
+                    planet.appendChild(city);
+                    this.planetElements.push(city);
+                }
+            }
+
             setupEventListeners() {
-                document.getElementById('planet').addEventListener('click', () => {
+                const planet = document.getElementById('planet');
+                const gameField = document.getElementById('gameField');
+                
+                // Клик по планете
+                planet.addEventListener('click', (e) => {
                     this.credits += this.power;
+                    this.createClickEffect(e.clientX, e.clientY);
+                    this.animatePlanetClick();
                     this.updateUI();
                 });
-
+                
+                // Клик по улучшениям
                 document.querySelectorAll('.upgrade-card').forEach(card => {
                     card.addEventListener('click', (e) => {
                         this.buyUpgrade(card.dataset.upgrade);
+                        card.classList.add('upgrade-pulse');
+                        setTimeout(() => card.classList.remove('upgrade-pulse'), 300);
                     });
                 });
+                
+                // Для мобильных устройств - обработка касаний
+                gameField.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.createClickEffect(touch.clientX, touch.clientY);
+                    this.animatePlanetClick();
+                    this.credits += this.power;
+                    this.updateUI();
+                }, { passive: false });
+            }
+
+            createClickEffect(x, y) {
+                const effect = document.createElement('div');
+                effect.className = 'click-effect';
+                effect.style.left = `${x}px`;
+                effect.style.top = `${y}px`;
+                document.getElementById('gameField').appendChild(effect);
+                
+                setTimeout(() => {
+                    effect.remove();
+                }, 500);
+            }
+
+            animatePlanetClick() {
+                const planet = document.getElementById('planet');
+                planet.style.transform = 'translate(-50%, -50%) scale(0.95)';
+                planet.style.boxShadow = '0 0 60px rgba(0, 255, 136, 0.6)';
+                
+                setTimeout(() => {
+                    planet.style.transform = 'translate(-50%, -50%) scale(1)';
+                    planet.style.boxShadow = '0 0 40px rgba(0, 255, 136, 0.3)';
+                }, 100);
             }
 
             spawnEnemy() {
                 const enemy = document.createElement('div');
                 enemy.className = 'enemy';
+                
+                // Создаем след за астероидом
+                const trail = document.createElement('div');
+                trail.className = 'trail';
+                enemy.appendChild(trail);
+                
                 const planetRect = document.getElementById('planet').getBoundingClientRect();
                 const targetX = planetRect.left + planetRect.width/2;
                 const targetY = planetRect.top + planetRect.height/2;
 
                 const angle = Math.random() * Math.PI * 2;
-                const spawnDistance = 1000;
+                const spawnDistance = Math.max(window.innerWidth, window.innerHeight) * 0.8;
                 const startX = targetX + Math.cos(angle) * spawnDistance;
                 const startY = targetY + Math.sin(angle) * spawnDistance;
 
@@ -282,8 +600,10 @@
                 const dx = targetX - startX;
                 const dy = targetY - startY;
                 const distance = Math.sqrt(dx*dx + dy*dy);
-                const speed = 1;
+                const speed = 1 + this.wave * 0.05;
+                const rotationSpeed = Math.random() * 2 + 1;
 
+                let rotation = 0;
                 const move = () => {
                     const currentX = parseFloat(enemy.style.left);
                     const currentY = parseFloat(enemy.style.top);
@@ -292,23 +612,66 @@
 
                     enemy.style.left = `${newX}px`;
                     enemy.style.top = `${newY}px`;
+                    
+                    // Обновляем след
+                    rotation = Math.atan2(dy, dx) * (180 / Math.PI);
+                    trail.style.transform = `rotate(${rotation}deg)`;
+                    trail.style.left = `${-trail.offsetWidth}px`;
+                    trail.style.top = `${-trail.offsetHeight/2}px`;
+                    
+                    // Вращение астероида
+                    enemy.style.transform = `rotate(${rotation}deg)`;
 
-                    if(Math.abs(newX - targetX) > 10 || Math.abs(newY - targetY) > 10) {
+                    if(Math.abs(newX - targetX) > 20 || Math.abs(newY - targetY) > 20) {
                         requestAnimationFrame(move);
                     } else {
                         this.health -= 2 + this.wave * 0.5;
+                        this.createExplosion(newX, newY);
                         enemy.remove();
                         this.updateUI();
                     }
                 };
                 requestAnimationFrame(move);
 
+                // Клик по астероиду
                 enemy.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.credits += 1 + this.upgrades.turret.level;
+                    this.createExplosion(e.clientX, e.clientY);
                     enemy.remove();
                     this.updateUI();
                 });
+            }
+
+            createExplosion(x, y) {
+                const explosion = document.createElement('div');
+                explosion.style.position = 'absolute';
+                explosion.style.left = `${x}px`;
+                explosion.style.top = `${y}px`;
+                explosion.style.width = '30px';
+                explosion.style.height = '30px';
+                explosion.style.borderRadius = '50%';
+                explosion.style.background = `radial-gradient(circle, ${this.upgrades.turret.level > 0 ? 'var(--accent)' : 'var(--secondary)'} 0%, transparent 70%)`;
+                explosion.style.transform = 'translate(-50%, -50%)';
+                explosion.style.pointerEvents = 'none';
+                explosion.style.zIndex = '5';
+                document.getElementById('gameField').appendChild(explosion);
+                
+                // Анимация взрыва
+                let size = 30;
+                const expand = () => {
+                    size += 10;
+                    explosion.style.width = `${size}px`;
+                    explosion.style.height = `${size}px`;
+                    explosion.style.opacity = `${1 - size/100}`;
+                    
+                    if(size < 100) {
+                        requestAnimationFrame(expand);
+                    } else {
+                        explosion.remove();
+                    }
+                };
+                requestAnimationFrame(expand);
             }
 
             buyUpgrade(type) {
@@ -323,10 +686,12 @@
                             this.power += 1;
                             break;
                         case 'turret':
-                            this.startTurret();
+                            this.turrets++;
+                            if(this.turrets === 1) this.startTurret();
                             break;
                         case 'shield':
-                            this.health = Math.min(100, this.health + 25);
+                            this.maxHealth = 100 + upgrade.level * 20;
+                            this.health = Math.min(this.maxHealth, this.health + 25);
                             break;
                         case 'heal':
                             this.autoHeal += 0.2;
@@ -335,6 +700,8 @@
                             this.autoIncome += 1;
                             break;
                     }
+                    
+                    this.updatePlanetAppearance();
                     this.updateUI(true);
                 }
             }
@@ -343,6 +710,8 @@
                 setInterval(() => {
                     document.querySelectorAll('.enemy').forEach(enemy => {
                         if(Math.random() < 0.1 * this.upgrades.turret.level) {
+                            const rect = enemy.getBoundingClientRect();
+                            this.createExplosion(rect.left + rect.width/2, rect.top + rect.height/2);
                             enemy.remove();
                             this.credits += 1;
                             this.updateUI();
@@ -353,35 +722,53 @@
 
             startWave() {
                 const enemiesCount = 5 + this.wave * 2;
+                const delay = Math.max(500 - this.wave * 20, 100);
+                
                 for(let i = 0; i < enemiesCount; i++) {
-                    setTimeout(() => this.spawnEnemy(), i * 500);
+                    setTimeout(() => {
+                        this.spawnEnemy();
+                        // Иногда спавним сразу несколько астероидов
+                        if(Math.random() < 0.3 && this.wave > 5) {
+                            setTimeout(() => this.spawnEnemy(), Math.random() * 300);
+                        }
+                    }, i * delay);
                 }
             }
 
             updateUI(updateUpgrades = false) {
                 document.getElementById('credits').textContent = Math.floor(this.credits);
                 document.getElementById('power').textContent = this.power;
-                document.getElementById('health').textContent = Math.min(100, Math.floor(this.health));
+                document.getElementById('health').textContent = Math.floor(this.health);
                 document.getElementById('wave').textContent = this.wave;
+                
+                // Обновляем индикатор здоровья
+                const healthPercent = Math.max(0, (this.health / this.maxHealth) * 100);
+                document.getElementById('health').style.color = 
+                    healthPercent > 70 ? 'var(--accent)' : 
+                    healthPercent > 30 ? 'orange' : 'var(--secondary)';
 
                 if(updateUpgrades) {
                     for(const type in this.upgrades) {
                         const upgrade = this.upgrades[type];
                         const card = document.querySelector(`[data-upgrade="${type}"]`);
-                        card.querySelector('.upgrade-cost').textContent = Math.round(upgrade.cost);
-                        card.querySelector('.upgrade-level span').textContent = upgrade.level;
+                        if(card) {
+                            card.querySelector('.upgrade-cost').textContent = Math.round(upgrade.cost);
+                            card.querySelector('.upgrade-level span').textContent = upgrade.level;
+                        }
                     }
                 }
 
                 if(this.health <= 0) {
-                    alert(`Game Over! Достигнута волна: ${this.wave}`);
-                    location.reload();
+                    setTimeout(() => {
+                        alert(`Game Over! Достигнута волна: ${this.wave}`);
+                        location.reload();
+                    }, 500);
                 }
             }
 
             gameLoop() {
                 setInterval(() => {
-                    this.health = Math.min(100, this.health + this.autoHeal);
+                    this.health = Math.min(this.maxHealth, this.health + this.autoHeal);
                     this.credits += this.autoIncome;
                     this.updateUI();
                     
@@ -393,7 +780,10 @@
             }
         }
 
-        new Game();
+        // Запуск игры после загрузки страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            new Game();
+        });
     </script>
 </body>
 </html>
